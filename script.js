@@ -42,11 +42,65 @@ async function startTuner() {
     } catch (err) {
         console.error('Erro ao acessar microfone:', err);
         alert('Erro: Não foi possível acessar o microfone. Verifique as permissões.');
-        needle.classList.remove('correct');
     }
 }
 
-requestAnimationFrame(updatePitch);
+const buflen = 4096;
+const buf = new Float32Array(buflen);
+
+const pitchBuffer = [];
+const bufferSize = 15; // Moderate smoothing for pitch
+
+function updatePitch() {
+    if (!isRunning) return;
+
+    analyser.getFloatTimeDomainData(buf);
+    const ac = autoCorrelate(buf, audioContext.sampleRate);
+
+    if (ac === -1) {
+        statusDisplay.innerText = "Toque uma corda";
+        needle.style.transform = "translateX(-50%) rotate(0deg)";
+        needle.classList.remove('correct');
+        noteDisplay.classList.remove('correct');
+        pitchBuffer.length = 0;
+        notePrevDisplay.innerText = "--";
+        noteNextDisplay.innerText = "--";
+    } else {
+        const rawPitch = ac;
+
+        // Smooth the PITCH (Frequency) not the cents
+        pitchBuffer.push(rawPitch);
+        if (pitchBuffer.length > bufferSize) pitchBuffer.shift();
+        const smoothedPitch = pitchBuffer.reduce((a, b) => a + b, 0) / pitchBuffer.length;
+
+        frequencyDisplay.innerText = Math.round(smoothedPitch) + " Hz";
+
+        // Calculate note and cents from the SMOOTHED pitch
+        const noteInfo = getNote(smoothedPitch);
+
+        noteDisplay.innerText = noteInfo.name;
+        notePrevDisplay.innerText = noteInfo.prev;
+        noteNextDisplay.innerText = noteInfo.next;
+
+        updateNeedle(noteInfo.cents);
+
+        // Tolerance +/- 10 cents
+        if (Math.abs(noteInfo.cents) < 10) {
+            statusDisplay.innerText = "Perfeito!";
+            noteDisplay.classList.add('correct');
+            needle.classList.add('correct');
+        } else if (noteInfo.cents < 0) {
+            statusDisplay.innerText = "Muito Baixo (Aperte)";
+            noteDisplay.classList.remove('correct');
+            needle.classList.remove('correct');
+        } else {
+            statusDisplay.innerText = "Muito Alto (Solte)";
+            noteDisplay.classList.remove('correct');
+            needle.classList.remove('correct');
+        }
+    }
+
+    requestAnimationFrame(updatePitch);
 }
 
 function autoCorrelate(buf, sampleRate) {
