@@ -1,0 +1,150 @@
+:root {
+    --bg-color: #121212;
+    --text-color: #ffffff;
+    --accent-color: #03dac6;
+    --success-color: #00e676;
+    --error-color: #cf6679;
+    --gauge-bg: #333333;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+#start-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Tuner UI */
+#tuner-ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.string-indicator {
+    font-size: 8rem;
+    font-weight: bold;
+    color: var(--text-color);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+}
+
+.string-indicator.correct {
+    color: var(--success-color);
+    text-shadow: 0 0 30px var(--success-color);
+}
+
+/* Gauge */
+.gauge-wrapper {
+    position: relative;
+    width: 300px;
+    height: 150px; /* Half circle */
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.gauge-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    border: 10px solid var(--gauge-bg);
+    border-bottom-color: transparent;
+    border-left-color: transparent; /* Makes it a semi-circle arc effectively if rotated correctly, but simple border is easier */
+    box-sizing: border-box;
+    /* Let's make a simple arc */
+    border: 15px solid var(--gauge-bg);
+    border-bottom: 0;
+    border-radius: 150px 150px 0 0;
+}
+
+.gauge-center {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    background-color: var(--text-color);
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.gauge-needle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 6px;
+    height: 140px;
+    background-color: var(--error-color);
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(0deg); /* -90 to 90 */
+    transition: transform 0.1s ease-out, background-color 0.2s;
+    border-radius: 3px;
+    z-index: 5;
+}
+
+.gauge-needle.correct {
+    background-color: var(--success-color);
+}
+
+.status-message {
+    font-size: 1.5rem;
+    font-weight: 300;
+    min-height: 2rem;
+}
+
+.frequency-debug {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 20px;
+}
