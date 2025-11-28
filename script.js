@@ -2,6 +2,8 @@ const startBtn = document.getElementById('start-btn');
 const startScreen = document.getElementById('start-screen');
 const tunerUI = document.getElementById('tuner-ui');
 const noteDisplay = document.getElementById('string-name');
+const notePrevDisplay = document.getElementById('note-prev');
+const noteNextDisplay = document.getElementById('note-next');
 const frequencyDisplay = document.getElementById('frequency');
 const needle = document.getElementById('needle');
 const statusDisplay = document.getElementById('status');
@@ -11,15 +13,8 @@ let analyser = null;
 let mediaStreamSource = null;
 let isRunning = false;
 
-// Standard Guitar Tuning (E A D G B E)
-const guitarStrings = [
-    { note: 'E', freq: 82.41 },
-    { note: 'A', freq: 110.00 },
-    { note: 'D', freq: 146.83 },
-    { note: 'G', freq: 196.00 },
-    { note: 'B', freq: 246.94 },
-    { note: 'e', freq: 329.63 }
-];
+// Chromatic Notes
+const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 startBtn.addEventListener('click', startTuner);
 
@@ -31,16 +26,14 @@ async function startTuner() {
 
         mediaStreamSource = audioContext.createMediaStreamSource(stream);
         analyser = audioContext.createAnalyser();
-        analyser.fftSize = 2048;
+        analyser.fftSize = 4096; // Higher resolution
 
-        // Optional: Low pass filter to help with fundamental frequency detection
         const filter = audioContext.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.value = 1000;
 
         mediaStreamSource.connect(filter);
         filter.connect(analyser);
-        // Do not connect to destination (speakers) to avoid feedback loop!
 
         startScreen.classList.add('hidden');
         tunerUI.classList.remove('hidden');
@@ -52,11 +45,11 @@ async function startTuner() {
     }
 }
 
-const buflen = 2048;
+const buflen = 4096;
 const buf = new Float32Array(buflen);
 
 const centsBuffer = [];
-const bufferSize = 20; // Increased smoothing factor for less sensitivity
+const bufferSize = 30; // Even more smoothing for stability
 
 function updatePitch() {
     if (!isRunning) return;
@@ -65,31 +58,32 @@ function updatePitch() {
     const ac = autoCorrelate(buf, audioContext.sampleRate);
 
     if (ac === -1) {
-        // No signal or too quiet
         statusDisplay.innerText = "Toque uma corda";
         needle.style.transform = "translateX(-50%) rotate(0deg)";
         needle.classList.remove('correct');
         noteDisplay.classList.remove('correct');
-        // Clear buffer on silence
         centsBuffer.length = 0;
+        notePrevDisplay.innerText = "--";
+        noteNextDisplay.innerText = "--";
     } else {
         const pitch = ac;
         frequencyDisplay.innerText = Math.round(pitch) + " Hz";
 
-        const closest = findClosestString(pitch);
-        const cents = getCents(pitch, closest.freq);
+        const noteInfo = getNote(pitch);
 
-        noteDisplay.innerText = closest.note;
+        noteDisplay.innerText = noteInfo.name;
+        notePrevDisplay.innerText = noteInfo.prev;
+        noteNextDisplay.innerText = noteInfo.next;
 
         // Smoothing
-        centsBuffer.push(cents);
+        centsBuffer.push(noteInfo.cents);
         if (centsBuffer.length > bufferSize) centsBuffer.shift();
         const smoothedCents = centsBuffer.reduce((a, b) => a + b, 0) / centsBuffer.length;
 
         updateNeedle(smoothedCents);
 
-        // Use smoothed cents for stability in status
-        if (Math.abs(smoothedCents) < 5) {
+        // Increased tolerance to +/- 8 cents
+        if (Math.abs(smoothedCents) < 8) {
             statusDisplay.innerText = "Perfeito!";
             noteDisplay.classList.add('correct');
             needle.classList.add('correct');
@@ -108,7 +102,6 @@ function updatePitch() {
 }
 
 function autoCorrelate(buf, sampleRate) {
-    // RMS for signal threshold
     let size = buf.length;
     let rms = 0;
     for (let i = 0; i < size; i++) {
@@ -117,9 +110,8 @@ function autoCorrelate(buf, sampleRate) {
     }
     rms = Math.sqrt(rms / size);
 
-    if (rms < 0.01) return -1; // Too quiet
+    if (rms < 0.01) return -1;
 
-    // Trim buffer to significant part
     let r1 = 0, r2 = size - 1, thres = 0.2;
     for (let i = 0; i < size / 2; i++)
         if (Math.abs(buf[i]) < thres) { r1 = i; break; }
@@ -129,7 +121,6 @@ function autoCorrelate(buf, sampleRate) {
     buf = buf.slice(r1, r2);
     size = buf.length;
 
-    // Autocorrelation
     const c = new Array(size).fill(0);
     for (let i = 0; i < size; i++)
         for (let j = 0; j < size - i; j++)
@@ -145,7 +136,6 @@ function autoCorrelate(buf, sampleRate) {
     }
     let T0 = maxpos;
 
-    // Parabolic interpolation for better precision
     let x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
     let a = (x1 + x3 - 2 * x2) / 2;
     let b = (x3 - x1) / 2;
@@ -154,22 +144,26 @@ function autoCorrelate(buf, sampleRate) {
     return sampleRate / T0;
 }
 
-function findClosestString(freq) {
-    let minDiff = Infinity;
-    let closest = guitarStrings[0];
+function getNote(freq) {
+    const noteNum = 12 * (Math.log(freq / 440) / Math.log(2));
+    const midi = Math.round(noteNum) + 69;
 
-    for (let str of guitarStrings) {
-        let diff = Math.abs(freq - str.freq);
-        if (diff < minDiff) {
-            minDiff = diff;
-            closest = str;
-        }
-    }
-    return closest;
-}
+    const noteIndex = midi % 12;
+    const name = noteStrings[noteIndex];
 
-function getCents(freq, targetFreq) {
-    return 1200 * Math.log2(freq / targetFreq);
+    const prevIndex = (noteIndex - 1 + 12) % 12;
+    const nextIndex = (noteIndex + 1) % 12;
+
+    const targetFreq = 440 * Math.pow(2, (midi - 69) / 12);
+    const cents = 1200 * Math.log2(freq / targetFreq);
+
+    return {
+        name: name,
+        prev: noteStrings[prevIndex],
+        next: noteStrings[nextIndex],
+        cents: cents,
+        freq: targetFreq
+    };
 }
 
 function updateNeedle(cents) {
