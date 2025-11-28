@@ -7,7 +7,7 @@
     <title>Afinador de Violão</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#2c1e12">
 </head>
 
 <body>
@@ -15,8 +15,31 @@
         <div id="start-screen">
             <h1>Afinador</h1>
             <p>Permita o acesso ao microfone para começar</p>
+            <button id="start-btn">Ligar Afinador</button>
         </div>
-        <script src="script.js"></script>
+
+        <div id="tuner-ui" class="hidden">
+            <div class="string-indicator" id="string-name">--</div>
+
+            <div class="gauge-wrapper">
+                <div class="gauge-bg"></div>
+                <div class="gauge-ticks">
+                    <div class="tick tick-center"></div>
+                    <div class="tick tick-left-1"></div>
+                    <div class="tick tick-left-2"></div>
+                    <div class="tick tick-right-1"></div>
+                    <div class="tick tick-right-2"></div>
+                </div>
+                <div class="gauge-needle" id="needle"></div>
+                <div class="gauge-center"></div>
+            </div>
+
+            <div class="status-message" id="status">Toque uma corda</div>
+            <div class="frequency-debug" id="frequency">0 Hz</div>
+        </div>
+        <div class="footer">Afinador do Jorge</div>
+    </div>
+    <script src="script.js"></script>
 </body>
 
 </html>
