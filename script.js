@@ -56,7 +56,7 @@ const buflen = 2048;
 const buf = new Float32Array(buflen);
 
 const centsBuffer = [];
-const bufferSize = 8; // Smoothing factor
+const bufferSize = 20; // Increased smoothing factor for less sensitivity
 
 function updatePitch() {
     if (!isRunning) return;
