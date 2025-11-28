@@ -42,63 +42,11 @@ async function startTuner() {
     } catch (err) {
         console.error('Erro ao acessar microfone:', err);
         alert('Erro: Não foi possível acessar o microfone. Verifique as permissões.');
+        needle.classList.remove('correct');
     }
 }
 
-const buflen = 4096;
-const buf = new Float32Array(buflen);
-
-const centsBuffer = [];
-const bufferSize = 30; // Even more smoothing for stability
-
-function updatePitch() {
-    if (!isRunning) return;
-
-    analyser.getFloatTimeDomainData(buf);
-    const ac = autoCorrelate(buf, audioContext.sampleRate);
-
-    if (ac === -1) {
-        statusDisplay.innerText = "Toque uma corda";
-        needle.style.transform = "translateX(-50%) rotate(0deg)";
-        needle.classList.remove('correct');
-        noteDisplay.classList.remove('correct');
-        centsBuffer.length = 0;
-        notePrevDisplay.innerText = "--";
-        noteNextDisplay.innerText = "--";
-    } else {
-        const pitch = ac;
-        frequencyDisplay.innerText = Math.round(pitch) + " Hz";
-
-        const noteInfo = getNote(pitch);
-
-        noteDisplay.innerText = noteInfo.name;
-        notePrevDisplay.innerText = noteInfo.prev;
-        noteNextDisplay.innerText = noteInfo.next;
-
-        // Smoothing
-        centsBuffer.push(noteInfo.cents);
-        if (centsBuffer.length > bufferSize) centsBuffer.shift();
-        const smoothedCents = centsBuffer.reduce((a, b) => a + b, 0) / centsBuffer.length;
-
-        updateNeedle(smoothedCents);
-
-        // Increased tolerance to +/- 8 cents
-        if (Math.abs(smoothedCents) < 8) {
-            statusDisplay.innerText = "Perfeito!";
-            noteDisplay.classList.add('correct');
-            needle.classList.add('correct');
-        } else if (smoothedCents < 0) {
-            statusDisplay.innerText = "Muito Baixo (Aperte)";
-            noteDisplay.classList.remove('correct');
-            needle.classList.remove('correct');
-        } else {
-            statusDisplay.innerText = "Muito Alto (Solte)";
-            noteDisplay.classList.remove('correct');
-            needle.classList.remove('correct');
-        }
-    }
-
-    requestAnimationFrame(updatePitch);
+requestAnimationFrame(updatePitch);
 }
 
 function autoCorrelate(buf, sampleRate) {
