@@ -48,7 +48,7 @@ button {
     cursor: pointer;
     font-weight: bold;
     text-transform: uppercase;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: transform 0.1s;
 }
 
@@ -71,9 +71,11 @@ button:active {
 .string-indicator {
     font-size: 8rem;
     font-weight: bold;
-    color: var(--text-color);
+    color: var(--error-color);
+    /* Default to red (wrong) */
     line-height: 1;
-    text-shadow: 0 0 20px rgba(255,255,255,0.1);
+    text-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+    transition: color 0.2s;
 }
 
 .string-indicator.correct {
@@ -85,7 +87,8 @@ button:active {
 .gauge-wrapper {
     position: relative;
     width: 300px;
-    height: 150px; /* Half circle */
+    height: 150px;
+    /* Half circle */
     overflow: hidden;
     margin-bottom: 20px;
 }
@@ -97,11 +100,6 @@ button:active {
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    border: 10px solid var(--gauge-bg);
-    border-bottom-color: transparent;
-    border-left-color: transparent; /* Makes it a semi-circle arc effectively if rotated correctly, but simple border is easier */
-    box-sizing: border-box;
-    /* Let's make a simple arc */
     border: 15px solid var(--gauge-bg);
     border-bottom: 0;
     border-radius: 150px 150px 0 0;
@@ -112,29 +110,37 @@ button:active {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 20px;
-    height: 20px;
-    background-color: var(--text-color);
+    width: 16px;
+    height: 16px;
+    background-color: silver;
+    border: 2px solid #333;
     border-radius: 50%;
     z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .gauge-needle {
     position: absolute;
-    bottom: 0;
+    bottom: 5px;
     left: 50%;
-    width: 6px;
-    height: 140px;
-    background-color: var(--error-color);
+    width: 4px;
+    /* Thinner */
+    height: 145px;
+    /* Longer */
+    background: linear-gradient(to top, #444 0%, var(--error-color) 40%, #ff0000 100%);
+    /* Compass style */
     transform-origin: bottom center;
-    transform: translateX(-50%) rotate(0deg); /* -90 to 90 */
-    transition: transform 0.1s ease-out, background-color 0.2s;
-    border-radius: 3px;
+    transform: translateX(-50%) rotate(0deg);
+    transition: transform 0.3s cubic-bezier(0.1, 0.7, 1.0, 0.1);
+    /* Smoother transition */
+    border-radius: 50% 50% 0 0;
     z-index: 5;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    /* Triangle/Needle shape */
 }
 
 .gauge-needle.correct {
-    background-color: var(--success-color);
+    background: linear-gradient(to top, #444 0%, var(--success-color) 40%, #00ff00 100%);
 }
 
 .status-message {
@@ -147,4 +153,14 @@ button:active {
     font-size: 0.9rem;
     color: #666;
     margin-top: 20px;
+}
+
+.footer {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+    opacity: 0.7;
 }

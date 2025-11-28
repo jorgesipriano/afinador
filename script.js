@@ -26,17 +26,17 @@ startBtn.addEventListener('click', startTuner);
 async function startTuner() {
     try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
+
         mediaStreamSource = audioContext.createMediaStreamSource(stream);
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 2048;
-        
+
         // Optional: Low pass filter to help with fundamental frequency detection
         const filter = audioContext.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 1000; 
+        filter.frequency.value = 1000;
 
         mediaStreamSource.connect(filter);
         filter.connect(analyser);
@@ -55,6 +55,9 @@ async function startTuner() {
 const buflen = 2048;
 const buf = new Float32Array(buflen);
 
+const centsBuffer = [];
+const bufferSize = 8; // Smoothing factor
+
 function updatePitch() {
     if (!isRunning) return;
 
@@ -67,23 +70,30 @@ function updatePitch() {
         needle.style.transform = "translateX(-50%) rotate(0deg)";
         needle.classList.remove('correct');
         noteDisplay.classList.remove('correct');
-        // Keep last note or show --? Show -- for now
-        // noteDisplay.innerText = "--"; 
+        // Clear buffer on silence
+        centsBuffer.length = 0;
     } else {
         const pitch = ac;
         frequencyDisplay.innerText = Math.round(pitch) + " Hz";
-        
+
         const closest = findClosestString(pitch);
         const cents = getCents(pitch, closest.freq);
-        
+
         noteDisplay.innerText = closest.note;
-        updateNeedle(cents);
-        
-        if (Math.abs(cents) < 5) {
+
+        // Smoothing
+        centsBuffer.push(cents);
+        if (centsBuffer.length > bufferSize) centsBuffer.shift();
+        const smoothedCents = centsBuffer.reduce((a, b) => a + b, 0) / centsBuffer.length;
+
+        updateNeedle(smoothedCents);
+
+        // Use smoothed cents for stability in status
+        if (Math.abs(smoothedCents) < 5) {
             statusDisplay.innerText = "Perfeito!";
             noteDisplay.classList.add('correct');
             needle.classList.add('correct');
-        } else if (cents < 0) {
+        } else if (smoothedCents < 0) {
             statusDisplay.innerText = "Muito Baixo (Aperte)";
             noteDisplay.classList.remove('correct');
             needle.classList.remove('correct');
@@ -106,7 +116,7 @@ function autoCorrelate(buf, sampleRate) {
         rms += val * val;
     }
     rms = Math.sqrt(rms / size);
-    
+
     if (rms < 0.01) return -1; // Too quiet
 
     // Trim buffer to significant part
@@ -147,7 +157,7 @@ function autoCorrelate(buf, sampleRate) {
 function findClosestString(freq) {
     let minDiff = Infinity;
     let closest = guitarStrings[0];
-    
+
     for (let str of guitarStrings) {
         let diff = Math.abs(freq - str.freq);
         if (diff < minDiff) {
