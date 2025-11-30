@@ -12,17 +12,36 @@
 
 <body>
     <div class="container">
-        <div class="tick tick-right-1"></div>
-        <div class="tick tick-right-2"></div>
-    </div>
-    <div class="gauge-needle" id="needle"></div>
-    <div class="gauge-center"></div>
-    </div>
+        <div id="start-screen">
+            <h1>Afinador</h1>
+            <p>Permita o acesso ao microfone para começar</p>
+            <button id="start-btn">Ligar Afinador</button>
+        </div>
 
-    <div class="status-message" id="status">Toque uma corda</div>
-    <div class="frequency-debug" id="frequency">0 Hz</div>
-    </div>
-    <div class="footer">Afinador do Jorge</div>
+        <div id="tuner-ui" class="hidden">
+            <div class="notes-display">
+                <div class="note-neighbor" id="note-prev">--</div>
+                <div class="string-indicator" id="string-name">--</div>
+                <div class="note-neighbor" id="note-next">--</div>
+            </div>
+
+            <div class="gauge-wrapper">
+                <div class="gauge-bg"></div>
+                <div class="gauge-ticks">
+                    <div class="tick tick-center"></div>
+                    <div class="tick tick-left-1"></div>
+                    <div class="tick tick-left-2"></div>
+                    <div class="tick tick-right-1"></div>
+                    <div class="tick tick-right-2"></div>
+                </div>
+                <div class="gauge-needle" id="needle"></div>
+                <div class="gauge-center"></div>
+            </div>
+
+            <div class="status-message" id="status">Toque uma corda</div>
+            <div class="frequency-debug" id="frequency">0 Hz</div>
+        </div>
+        <div class="footer">Afinador do Jorge</div>
     </div>
     <script src="script.js"></script>
 </body>
